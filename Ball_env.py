@@ -26,10 +26,10 @@ random_location = False  # True-random location of ball, robot, gate is open
 # define some parameters
 MAP_WIDTH = 800  # the width of the map
 MAP_LENGTH = 800  # the length of the map
-ROB_POS = [300, 300, 0]  # the initial location of robot x, y, θ (valid if random location is closed)
-BALL_POS = [500, 500]  # the initial location of football (valid if random location is closed)
-GATE_POS = [700,
-            700]  # the initial location of gate (valid if random location is closed), this can be n-D array for n gates
+ROB_POS = (300, 300, 0)  # the initial location of robot x, y, θ (valid if random location is closed)
+BALL_POS = (500, 500)  # the initial location of football (valid if random location is closed)
+GATE_POS = (700,
+            700)  # the initial location of gate (valid if random location is closed), this can be n-D array for n gates
 GATE_NUM = 1  # the number of gates
 # range[1,inf] 1-only one gates
 # range[0,1]. 0-no friction
@@ -63,10 +63,17 @@ class Ball_env(gym.Env):
     viewer = None  # initialize viewer as none
 
     def __init__(self):
-        self.gate_pos = GATE_POS  # gate position
-        self.ball_pos = BALL_POS  # ball position
+        self.gate_pos = [0,0]
+        self.ball_pos = [0,0]
+        self.rob_pos = [0,0,0]
+        self.gate_pos[0] = GATE_POS[0]  # gate position
+        self.gate_pos[1] = GATE_POS[1]  # gate position
+        self.ball_pos[0] = BALL_POS[0]  # ball position
+        self.ball_pos[1] = BALL_POS[1]  # ball position
         self.ball_vel = [0, 0]  # ball velocity, vx, vy
-        self.rob_pos = ROB_POS  # robot position
+        self.rob_pos[0] = ROB_POS[0]  # robot position
+        self.rob_pos[1] = ROB_POS[1]  # robot position
+        self.rob_pos[2] = ROB_POS[2]  # robot position
         self.rob_vel = [0, 0, 0]  # robot velocity, vx, vy, ω
         self.rob_wheel_vel = [0, 0]  # robot wheel velocity
         self.steps = 0  # the steps
@@ -74,13 +81,18 @@ class Ball_env(gym.Env):
 
     # reset environment
     def reset(self):
-        self.gate_pos = GATE_POS  # gate position
-        self.ball_pos = BALL_POS  # ball position
+        self.gate_pos[0] = GATE_POS[0]  # gate position
+        self.gate_pos[1] = GATE_POS[1]  # gate position
+        self.ball_pos[0] = BALL_POS[0]  # ball position
+        self.ball_pos[1] = BALL_POS[1]  # ball position
         self.ball_vel = [0, 0]  # ball velocity, vx, vy
-        self.rob_pos = ROB_POS  # robot position
+        self.rob_pos[0] = ROB_POS[0]  # robot position
+        self.rob_pos[1] = ROB_POS[1]  # robot position
+        self.rob_pos[2] = ROB_POS[2]  # robot position
         self.rob_vel = [0, 0, 0]  # robot velocity, vx, vy, ω
+        self.rob_wheel_vel = [0, 0]  # robot wheel velocity
         self.steps = 0  # the steps
-        self.ignore_hitting = False  # avoid bug when hitting\
+        self.ignore_hitting = False  # avoid bug when hitting
         return [self.gate_pos[0], self.gate_pos[1], self.ball_pos[0], self.ball_pos[0], self.ball_vel[0],
                 self.ball_vel[1], self.rob_pos[0], self.rob_pos[1], self.rob_pos[2],
                 self.rob_vel[0], self.rob_vel[1], self.rob_vel[2]]
@@ -186,7 +198,7 @@ class Ball_env(gym.Env):
             y1 = a - M * x1
             y2 = a - M * x2
             end_time = datetime.datetime.now()
-            print(x1, y1, x2, y2, end_time - start_time)
+            # print(x1, y1, x2, y2, end_time - start_time)
 
             # choose the solution
             if abs(x1 - rob_vel_n[0]) + abs(y1 - ball_vel_n[0]) <= 0.001:
@@ -391,9 +403,8 @@ class Ball_env(gym.Env):
 
     # generate random action for testing
     def random_action(self):
-        action_l = random.randint(-10, 10)
-        action_r = random.randint(-10, 10)
-        return [action_l, action_r]
+        action = random.randint(1, 9)
+        return action
 
     # detect collision
     def collision_detect(self):
@@ -496,5 +507,7 @@ if __name__ == '__main__':
     env = Ball_env()
 
     while True:
-        env.render()
-        print(env.step(env.random_action()))
+        env.reset()
+        for i in range (1000):
+            env.render()
+            env.step(env.random_action())

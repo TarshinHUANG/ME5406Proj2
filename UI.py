@@ -14,8 +14,8 @@ random_location = False  # True-random location of ball, robot, gate is open
 # define some parameters
 MAP_WIDTH = 800  # the width of the map
 MAP_LENGTH = 800  # the length of the map
-ROB_SIZE = 100  # the radius of robot (supposing circle)
-BALL_SIZE = 100  # the radius of football (supposing circle)
+ROB_SIZE = 50  # the radius of robot (supposing circle)
+BALL_SIZE = 50  # the radius of football (supposing circle)
 ROB_POS = [300, 300, 0]  # the initial location of robot x, y, θ (valid if random location is closed)
 BALL_POS = [500, 500]  # the initial location of football (valid if random location is closed)
 GATE_POS = [700,
@@ -362,8 +362,8 @@ class Ball_env(gym.Env):
 
     # generate random action for testing
     def random_action(self):
-        action_l = random.randint(0, 1000)
-        action_r = random.randint(0, 1000)
+        action_l = random.randint(-1, 1)
+        action_r = random.randint(-1, 1)
         return [action_l, action_r]
 
     # detect collision 
@@ -413,7 +413,7 @@ class Viewer(pyglet.window.Window):
 
         # load football
         # load the picture, cannot use pyglet.image.load()
-        pyglet.resource.path = ["C:/Users/Jerry.Doo/Desktop"]
+        pyglet.resource.path = ["./resource/"]
         pyglet.resource.reindex()
         self.ball = pyglet.resource.image('soccer.png')
         self.ball.width = 2 * BALL_SIZE
@@ -483,9 +483,12 @@ class Viewer(pyglet.window.Window):
 if __name__ == '__main__':
     env = Ball_env()
     while True:
+        env.reset()
+        
         env.render()
         move = [0,0]
         env.step(move)
+
 
 
 
