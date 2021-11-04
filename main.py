@@ -46,11 +46,11 @@ def env_step(action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     env.render()
     state, reward, done = env.step(action)
     state = np.array(state)
-    return state.astype(np.float32), np.array(reward, np.int32), np.array(done, np.int32)
+    return state.astype(np.float32), np.array(reward, np.float32), np.array(done, np.int32)
 
 
 def tf_env_step(action: tf.Tensor) -> List[tf.Tensor]:
-    return tf.numpy_function(env_step, [action], [tf.float32, tf.int32, tf.int32])
+    return tf.numpy_function(env_step, [action], [tf.float32, tf.float32, tf.int32])
 
 
 def run_episode(initial_state: tf.Tensor, model: tf.keras.Model, max_steps: int)\
@@ -59,7 +59,7 @@ def run_episode(initial_state: tf.Tensor, model: tf.keras.Model, max_steps: int)
 
     action_probs = tf.TensorArray(dtype=tf.float32, size=0, dynamic_size=True)
     values = tf.TensorArray(dtype=tf.float32, size=0, dynamic_size=True)
-    rewards = tf.TensorArray(dtype=tf.int32, size=0, dynamic_size=True)
+    rewards = tf.TensorArray(dtype=tf.float32, size=0, dynamic_size=True)
 
     initial_state_shape = initial_state.shape
     state = initial_state
@@ -70,7 +70,6 @@ def run_episode(initial_state: tf.Tensor, model: tf.keras.Model, max_steps: int)
 
         # Run the model and to get action probabilities and critic value
         action_logits_t, value = model(state)
-
         # Sample next action from the action probability distribution
         action = tf.random.categorical(action_logits_t, 1)[0, 0]
 
@@ -90,8 +89,8 @@ def run_episode(initial_state: tf.Tensor, model: tf.keras.Model, max_steps: int)
 
         done = tf.cast(done, tf.bool)
         if done:
+            print('Reached the target!!!')
             break
-
     action_probs = action_probs.stack()
     values = values.stack()
     rewards = rewards.stack()
@@ -146,7 +145,6 @@ def compute_loss(action_probs: tf.Tensor,  values: tf.Tensor,  returns: tf.Tenso
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 
 
-@tf.function
 def episode_train(initial_state: tf.Tensor, model: tf.keras.Model, optimizer: tf.keras.optimizers.Optimizer,
                gamma: float, max_steps_per_episode: int) -> tf.Tensor:
     """Runs a model training step."""
@@ -176,7 +174,7 @@ def episode_train(initial_state: tf.Tensor, model: tf.keras.Model, optimizer: tf
 
 # 5. Run the training loop
 max_episodes = 1000  # End training after this number of episode
-max_steps_per_episode = 10000  # End episode after this number of timesteps
+max_steps_per_episode = 1000  # End episode after this number of timesteps
 how_to_consider_good_enough = False
 
 running_reward = 0  # Real-time averaged reward
@@ -189,16 +187,17 @@ episodes_reward: collections.deque = collections.deque(maxlen=100)
 with tqdm.trange(max_episodes) as t:
     for i in t:
         initial_state = tf.constant(env.reset(), dtype=tf.float32)
-        episode_reward = int(episode_train(initial_state, A2Cmodel, optimizer, gamma, max_steps_per_episode))
+        episode_reward = episode_train(initial_state, A2Cmodel, optimizer, gamma, max_steps_per_episode)
 
-        episodes_reward.append(episode_reward)
+        episodes_reward.append(episode_reward.numpy())
         running_reward = statistics.mean(episodes_reward)
 
         t.set_description(f'Episode {i}')
         t.set_postfix(episode_reward=episode_reward, running_reward=running_reward)
 
         # Show average episode reward every 50 episodes
-        if i % 10 == 1:
+        if i % 10 == 0:
+            print('\n')
             print(f'Episode {i}: average reward: {running_reward}')
 
         if how_to_consider_good_enough:
