@@ -36,15 +36,16 @@ class AdvantageActorCritic(tf.keras.Model):
         return self.actor(h2), self.critic(h2)
 
 
-A2Cmodel = AdvantageActorCritic(9, 50, 30)
+A2Cmodel = AdvantageActorCritic(num_actions=9, num_hidden_1_unit=50, num_hidden_2_unit=30)
 
 
 # 1. Collecting training data
 def env_step(action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns state, reward and done flag given an action."""
-
     # Assume env is the environment package.
-    state, reward, done, _ = env.step(action)
+    env.render()
+    state, reward, done = env.step(action)
+    state = np.array(state)
     return state.astype(np.float32), np.array(reward, np.int32), np.array(done, np.int32)
 
 
@@ -174,7 +175,7 @@ def episode_train(initial_state: tf.Tensor, model: tf.keras.Model, optimizer: tf
 
 
 # 5. Run the training loop
-max_episodes = 10000  # End training after this number of episode
+max_episodes = 1000  # End training after this number of episode
 max_steps_per_episode = 10000  # End episode after this number of timesteps
 how_to_consider_good_enough = False
 
@@ -197,7 +198,7 @@ with tqdm.trange(max_episodes) as t:
         t.set_postfix(episode_reward=episode_reward, running_reward=running_reward)
 
         # Show average episode reward every 50 episodes
-        if i % 50 == 0:
+        if i % 10 == 1:
             print(f'Episode {i}: average reward: {running_reward}')
 
         if how_to_consider_good_enough:
