@@ -36,7 +36,7 @@ class AdvantageActorCritic(tf.keras.Model):
         return self.actor(h2), self.critic(h2)
 
 
-A2Cmodel = AdvantageActorCritic(num_actions=9, num_hidden_1_unit=50, num_hidden_2_unit=30)
+A2Cmodel = AdvantageActorCritic(num_actions=9, num_hidden_1_unit=40, num_hidden_2_unit=20)
 
 
 # 1. Collecting training data
