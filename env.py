@@ -508,6 +508,6 @@ if __name__ == '__main__':
 
     while True:
         env.reset()
-        for i in range (1000):
+        for i in range(1000):
             env.render()
             env.step(env.random_action())
