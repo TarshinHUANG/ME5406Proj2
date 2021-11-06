@@ -413,9 +413,9 @@ class Viewer(pyglet.window.Window):
 
         # load football
         # load the picture, cannot use pyglet.image.load()
-        pyglet.resource.path = ["C:/Users/Jerry.Doo/Desktop"]
+        pyglet.resource.path = ["."]
         pyglet.resource.reindex()
-        self.ball = pyglet.resource.image('soccer1.png')
+        self.ball = pyglet.resource.image('soccer.png')
         self.ball.width = 2 * BALL_SIZE
         self.ball.height = 2 * BALL_SIZE
         self.ball.anchor_x = self.ball.width // 2
