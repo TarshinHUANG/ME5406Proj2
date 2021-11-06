@@ -17,7 +17,7 @@ import pyglet
 from pyglet import image
 import math
 import random
-from pyglet.libs.win32.constants import TRUE
+from pyglet.libs.win32.constants import DISP_CHANGE_BADDUALVIEW, TRUE
 from sympy import symbols, Eq, solve
 import datetime
 
@@ -43,12 +43,18 @@ MAX_STEPS = 100000  # the max_steps for each episode
 ROB_SIZE = 50  # the radius of robot (supposing circle)
 BALL_SIZE = 50  # the radius of football (supposing circle)
 CE_FRI = 0.0  # coefficient of friction
-MASS_RAT = 100  # the ratio of robot to football
+MASS_RAT = 1  # the ratio of robot to football
 SLD_THD = 0  # the random sliding's threshold when robot knicking the ball
 VEL_THRD = 1  # the max velocity is considered as entering the gate
 SPEED_THRD = 500  # the max speed of the robot and the football
 ANG_SPEED_THRD = 20  # the max angular speed of the robot
 
+# Reward adjustment
+REACH_GATE=100    # when the ball reach the gate
+HIT_WALL = -10    # the robot hits the wall
+DIS_BG=0.1        # the distance between the ball and the gate
+DIS_RB=0.01       # the distance between the robot and the ball
+STEP=-0.02        # each step
 '''
     Oberservation:
         robot position, football position, robot speed, football speed, robot orientation, gate position
@@ -393,29 +399,30 @@ class Ball_env(gym.Env):
         if (self.distance(self.ball_pos, self.gate_pos) <= BALL_SIZE and self.ball_vel[0] <= VEL_THRD and self.ball_vel[
             1] <= VEL_THRD):
             # the football reach the gate
-            reward = 100
+            reward = REACH_GATE
         elif (self.col_type ==2 ):
             # the robot hits the wall
-            reward = -10
+            reward = HIT_WALL
         elif (new_distanceBG < self.old_distanceBG and self.col_type == 1):
             # get closer when hitting the ball
-            reward = 0.1
+            reward = DIS_BG
         elif (new_distanceBG > self.old_distanceBG and self.col_type == 1):
             # get farther when hitting the ball
-            reward = -0.1
+            reward = -DIS_BG
         elif (new_distanceRB < self.old_distanceRB ):
             # get closer to the ball
-            reward = 0.01
+            reward = DIS_RB
         elif (new_distanceRB > self.old_distanceRB ):
             # get farther to the ball
-            reward = -0.01
+            reward = -DIS_RB
         else:
             # every step has penalty
-            reward = -0.02
+            reward = STEP
         # store the new distance between the football and the gate
         self.old_distanceBG = new_distanceBG
         # store the new distance between the robot and the football
         self.old_distanceRB = new_distanceRB
+        
         return reward
 
     # generate random action for testing
@@ -458,7 +465,7 @@ class Ball_env(gym.Env):
 
 
 class Viewer(pyglet.window.Window):
-
+    frame_cnt = 0 # count the frame 
     def __init__(self, rob_pos, ball_pos, gate_pos):
         # vsync=False to not use the monitor FPS (75Hz) as operating rate, instead, the cpu will determine the operating rate
         super(Viewer, self).__init__(width=MAP_LENGTH, height=MAP_WIDTH, resizable=True, caption='FootballCourt',
@@ -524,7 +531,19 @@ class Viewer(pyglet.window.Window):
                           font_size=18,
                           x=18*4, y=MAP_WIDTH-36,
                           anchor_x='center', anchor_y='center')
+        else:
+            self.frame_cnt = self.frame_cnt+1
+
+        if self.frame_cnt>=500:
+            self.frame_cnt =0
+            self.label = pyglet.text.Label("reward:",
+                          font_name='Times New Roman',
+                          font_size=18,
+                          x=18*4, y=MAP_WIDTH-36,
+                          anchor_x='center', anchor_y='center')
+
         self.label.draw()
+
         # swap front and back buffers to unpdate the visible display with the back buffer
         self.flip()
 

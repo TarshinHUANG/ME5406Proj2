@@ -22,9 +22,9 @@ GATE_POS = [700,
             700]  # the initial location of gate (valid if random location is closed), this can be n-D array for n gates
 GATE_NUM = 1  # the number of gates
 # range[1,inf] 1-only one gates
-CE_FRI = 0.0  # coefficient of friction
+CE_FRI = 0.01  # coefficient of friction
 # range[0,1]. 0-no friction
-MASS_RAT = 100  # the ratio of robot to football
+MASS_RAT = 1  # the ratio of robot to football
 # range(0,inf] inf-robot is far heavier than football
 SLD_THD = 0  # the random sliding's threshold when robot knicking the ball
 # range[0,inf] 0-there is no random sliding on robot
@@ -47,41 +47,68 @@ class Ball_env(gym.Env):
     # inherit 5 methods from gym - step, reset, render, close, seed
 
     viewer = None  # initialize viewer as none
+    old_distanceBG = -1 # store the distance between the football and the gate
+    old_distanceRB = -1 # store the distance between the robot and the football
+    
+    
 
     def __init__(self):
-        self.gate_pos = GATE_POS  # gate position
-        self.ball_pos = BALL_POS  # ball position
+        self.gate_pos = [0,0]
+        self.ball_pos = [0,0]
+        self.rob_pos = [0,0,0]
+        self.gate_pos[0] = GATE_POS[0]  # gate position
+        self.gate_pos[1] = GATE_POS[1]  # gate position
+        self.ball_pos[0] = BALL_POS[0]  # ball position
+        self.ball_pos[1] = BALL_POS[1]  # ball position
         self.ball_vel = [0, 0]  # ball velocity, vx, vy
-        self.rob_pos = ROB_POS  # robot position
+        self.rob_pos[0] = ROB_POS[0]  # robot position
+        self.rob_pos[1] = ROB_POS[1]  # robot position
+        self.rob_pos[2] = ROB_POS[2]  # robot position
         self.rob_vel = [0, 0, 0]  # robot velocity, vx, vy, ω
         self.rob_wheel_vel = [0, 0]  # robot wheel velocity
         self.steps = 0  # the steps
         self.ignore_hitting = False  # avoid bug when hitting
-
-    # reset enviroment
+        self.reward = 0 # the reward
+        self.col_type = 0 # collision type
+        self.label = pyglet.text.Label("reward:",
+                          font_name='Times New Roman',
+                          font_size=18,
+                          x=18*4, y=MAP_WIDTH-36,
+                          anchor_x='center', anchor_y='center')
+    # reset environment
     def reset(self):
-        self.gate_pos = GATE_POS  # gate position
-        self.ball_pos = BALL_POS  # ball position
+        self.gate_pos[0] = GATE_POS[0]  # gate position
+        self.gate_pos[1] = GATE_POS[1]  # gate position
+        self.ball_pos[0] = BALL_POS[0]  # ball position
+        self.ball_pos[1] = BALL_POS[1]  # ball position
         self.ball_vel = [0, 0]  # ball velocity, vx, vy
-        self.rob_pos = ROB_POS  # robot position
+        self.rob_pos[0] = ROB_POS[0]  # robot position
+        self.rob_pos[1] = ROB_POS[1]  # robot position
+        self.rob_pos[2] = ROB_POS[2]  # robot position
         self.rob_vel = [0, 0, 0]  # robot velocity, vx, vy, ω
+        self.rob_wheel_vel = [0, 0]  # robot wheel velocity
         self.steps = 0  # the steps
         self.ignore_hitting = False  # avoid bug when hitting
+        self.reward = 0 # the reward
+        self.col_type = 0 # collision type
+        return [self.gate_pos[0], self.gate_pos[1], self.ball_pos[0], self.ball_pos[0], self.ball_vel[0],
+                self.ball_vel[1], self.rob_pos[0], self.rob_pos[1], self.rob_pos[2],
+                self.rob_vel[0], self.rob_vel[1], self.rob_vel[2]]
 
     def step(self, action):
         self.update_velocity(action)  # update the velocity for football and robot
         self.update_position()  # update the position for football and robot
-        reward = self.get_reward()  # calculate the rewards for each state and action
+        self.reward = self.get_reward()  # calculate the rewards for each state and action
         done = self.is_end()
 
         self.steps = self.steps + 1  # update steps
-        return (self.rob_pos, self.ball_pos), reward, done
+        return (self.rob_pos, self.ball_pos), self.reward, done
 
     # visualize
     def render(self):
         if self.viewer is None:  # if there is no viewer, then create one
             self.viewer = Viewer(self.rob_pos, self.ball_pos, self.gate_pos)
-        self.viewer.render(self.rob_pos, self.ball_pos, self.gate_pos)
+        self.viewer.render(self.rob_pos, self.ball_pos, self.gate_pos,self.reward)
 
     def update_velocity(self, action):
         # update wheel velocity based on action
@@ -94,12 +121,12 @@ class Ball_env(gym.Env):
         self.rob_vel[0] = rob_vel_liear * math.sin(self.rob_pos[2])  # get vx
         self.rob_vel[1] = rob_vel_liear * math.cos(self.rob_pos[2])  # get vy
 
-        col_type = self.collision_detect()
+        self.col_type = self.collision_detect()
         # changing velocity according to collision
-        if col_type == 0:
+        if self.col_type == 0:
             # 0-no collision
             pass
-        elif col_type == 1:
+        elif self.col_type == 1:
             # 1-collision between robot and football
             n = [self.ball_pos[0] - self.rob_pos[0],
                  self.ball_pos[1] - self.rob_pos[1]]  # The n vector, points from robot to football
@@ -149,11 +176,11 @@ class Ball_env(gym.Env):
             y1 = a - M * x1
             y2 = a - M * x2
             end_time = datetime.datetime.now()
-            print(x1, y1, x2, y2, end_time - start_time)
+            # print(x1, y1, x2, y2, end_time - start_time)
 
             # choose the solution
             if abs(x1 - rob_vel_n[0]) + abs(y1 - ball_vel_n[0]) <= 0.001:
-                # unwanted solution 
+                # unwanted solution
                 rob_vel_n_new[0] = x2
                 ball_vel_n_new[0] = y2
             else:
@@ -161,8 +188,6 @@ class Ball_env(gym.Env):
                 rob_vel_n_new[0] = x1
                 ball_vel_n_new[0] = y1
 
-            print("1", rob_vel_n, ',', ball_vel_n, ',', self.rob_vel[2])
-            print('2', rob_vel_n_new, ',', ball_vel_n_new)
             ## get the velocity in x,y coordinate through rotation matrix
             # robot velocity in x,y coordinate
             self.rob_vel = [math.cos(phi) * rob_vel_n_new[0] - math.sin(phi) * rob_vel_n_new[1],
@@ -172,7 +197,7 @@ class Ball_env(gym.Env):
                              math.sin(phi) * ball_vel_n_new[0] + math.cos(phi) * ball_vel_n_new[1]]
 
 
-        elif col_type == 2:
+        elif self.col_type == 2:
             # 2-collision between robot and wall
             if self.rob_pos[0] <= 0 + ROB_SIZE or self.rob_pos[0] >= MAP_LENGTH - ROB_SIZE:
                 # hit in the x axis
@@ -181,7 +206,7 @@ class Ball_env(gym.Env):
                 # hit in the y axis
                 self.rob_vel[1] = -self.rob_vel[1]
 
-        elif col_type == 3:
+        elif self.col_type == 3:
             # 3-collision between football and wall
             if self.ball_pos[0] <= 0 + BALL_SIZE or self.ball_pos[0] >= MAP_LENGTH - BALL_SIZE:
                 # hit in the x axis
@@ -203,7 +228,7 @@ class Ball_env(gym.Env):
         self.ball_vel[1] = self.ball_vel[1] - CE_FRI * self.ball_vel[1]
 
         # changing velocity according to sliding when the robot hits the football
-        if col_type == 1:  # the robot hits the football
+        if self.col_type == 1:  # the robot hits the football
             self.ball_vel[0] = self.ball_vel[0] + random.uniform(-1, 1) * SLD_THD
             self.ball_vel[1] = self.ball_vel[1] + random.uniform(-1, 1) * SLD_THD
 
@@ -271,6 +296,7 @@ class Ball_env(gym.Env):
                 self.rob_pos[2] = theta
             else:
                 self.rob_pos[2] = math.pi + theta
+            
         self.rob_wheel_vel[0] = rob_vel_liear + self.rob_vel[2] * ROB_SIZE
         self.rob_wheel_vel[1] = rob_vel_liear - self.rob_vel[2] * ROB_SIZE
 
@@ -331,33 +357,39 @@ class Ball_env(gym.Env):
     def get_reward(self):
         # get the new distance between the ball and the gate
         new_distanceBG = self.distance(self.ball_pos, self.gate_pos)
-        # if not defined old_distanceBG, then defined one 
-        try:
-            old_distanceBG
-        except NameError:
-            old_distanceBG = new_distanceBG
-        else:
-            pass
+        new_distanceRB = self.distance(self.rob_pos, self.ball_pos)
+        if self.old_distanceBG == -1:
+            # first value of old_distance
+            self.old_distanceBG = new_distanceBG 
+        if self.old_distanceRB == -1:
+            # first value of old_distance
+            self.old_distanceRB = new_distanceRB 
         if (self.distance(self.ball_pos, self.gate_pos) <= BALL_SIZE and self.ball_vel[0] <= VEL_THRD and self.ball_vel[
             1] <= VEL_THRD):
             # the football reach the gate
             reward = 100
-        elif (self.rob_pos[0] <= 0 + ROB_SIZE or self.rob_pos[0] >= MAP_LENGTH - ROB_SIZE or self.rob_pos[
-            1] <= 0 + ROB_SIZE or self.rob_pos[1] >= MAP_WIDTH - ROB_SIZE):
+        elif (self.col_type ==2 ):
             # the robot hits the wall
             reward = -10
-        elif (new_distanceBG < old_distanceBG and self.distance(self.rob_pos, self.ball_pos) <= (ROB_SIZE + BALL_SIZE)):
+        elif (new_distanceBG < self.old_distanceBG and self.col_type == 1):
             # get closer when hitting the ball
             reward = 0.1
-        elif (new_distanceBG > old_distanceBG and self.distance(self.rob_pos, self.ball_pos) <= (ROB_SIZE + BALL_SIZE)):
+        elif (new_distanceBG > self.old_distanceBG and self.col_type == 1):
             # get farther when hitting the ball
             reward = -0.1
+        elif (new_distanceRB < self.old_distanceRB ):
+            # get closer to the ball
+            reward = 0.01
+        elif (new_distanceRB > self.old_distanceRB ):
+            # get farther to the ball
+            reward = -0.01
         else:
             # every step has penalty
             reward = -0.02
-        # store the new distance between the ball and the gate
-        old_distanceBG = new_distanceBG
-
+        # store the new distance between the football and the gate
+        self.old_distanceBG = new_distanceBG
+        # store the new distance between the robot and the football
+        self.old_distanceRB = new_distanceRB
         return reward
 
     # generate random action for testing
@@ -401,6 +433,7 @@ class Ball_env(gym.Env):
 
 
 class Viewer(pyglet.window.Window):
+    frame_cnt = 0 # count the frame 
     def __init__(self, rob_pos, ball_pos, gate_pos):
         # vsync=False to not use the monitor FPS (75Hz) as operating rate, instead, the cpu will determine the operating rate
         super(Viewer, self).__init__(width=MAP_LENGTH, height=MAP_WIDTH, resizable=False, caption='FootballCourt',
@@ -436,13 +469,12 @@ class Viewer(pyglet.window.Window):
         self.gate.anchor_y = self.gate.height // 2
 
     # refresh and show the screen
-    def render(self, rob_pos, ball_pos, gate_pos):
+    def render(self, rob_pos, ball_pos, gate_pos,reward):
         # arrange the handlers, otherwise the ui will stuck
         self.dispatch_events()
         # store pictures in the batch
         senario = []
         # robot position
-        print(rob_pos)
         rob_batch = pyglet.sprite.Sprite(img=self.rob, x=rob_pos[0], y=rob_pos[1], batch=self.batch)
         # robot rotation
         rob_batch.rotation = rob_pos[2] * 180 / math.pi
@@ -462,20 +494,38 @@ class Viewer(pyglet.window.Window):
         # draw the scenarios
         self.batch.draw()
 
+        # show the rewards   
+        if abs(reward) != 0.01:
+            self.label = pyglet.text.Label("reward:"+str(reward),
+                          font_name='Times New Roman',
+                          font_size=18,
+                          x=18*4, y=MAP_WIDTH-36,
+                          anchor_x='center', anchor_y='center')
+        else:
+            self.frame_cnt = self.frame_cnt+1
+
+        if self.frame_cnt>=50:
+            self.frame_cnt =0
+            self.label = pyglet.text.Label("reward:",
+                          font_name='Times New Roman',
+                          font_size=18,
+                          x=18*4, y=MAP_WIDTH-36,
+                          anchor_x='center', anchor_y='center')
+
+        self.label.draw()
+
         # swap front and back buffers to unpdate the visible display with the back buffer
         self.flip()
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.UP:
-            move = [0.04, 0.02]
+            move = [0.2, 0.2]
         elif symbol == key.DOWN:
-            move = [-0.04, -0.02]
+            move = [-0.2, -0.2]
         elif symbol == key.LEFT:
-            move = [0.02, 0.04]
+            move = [-0.1, 0.1]
         elif symbol == key.RIGHT:
-            move = [-0.02, -0.04]
-        else:
-            move = [1, -1]
+            move = [0.1, -0.1]
 
         env.step(move)
 
