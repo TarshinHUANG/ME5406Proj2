@@ -111,18 +111,20 @@ class Ball_env(gym.Env):
     @staticmethod
     def action_two_wheel(action_class):
         action = [0, 0]
-        if action_class == 1 or action_class == 2 or action_class == 3:
-            action[0] = -1
-        if action_class == 4 or action_class == 5 or action_class == 6:
+        if action_class == 0 or action_class == 1 or action_class == 2:
+            action[0] = -10
+        elif action_class == 3 or action_class == 4 or action_class == 5:
             action[0] = 0
-        if action_class == 7 or action_class == 8 or action_class == 9:
-            action[0] = 1
-        if action_class == 1 or action_class == 4 or action_class == 7:
-            action[1] = -1
-        if action_class == 2 or action_class == 5 or action_class == 8:
+        elif action_class == 6 or action_class == 7 or action_class == 8:
+            action[0] = 10
+        if action_class == 0 or action_class == 3 or action_class == 6:
+            action[1] = -10
+        elif action_class == 1 or action_class == 4 or action_class == 7:
             action[1] = 0
-        if action_class == 3 or action_class == 6 or action_class == 9:
-            action[1] = 1
+        elif action_class == 2 or action_class == 5 or action_class == 8:
+            action[1] = 10
+        else:
+            print('Wrong action input!!!')
         return action
 
     def step(self, action_class):
