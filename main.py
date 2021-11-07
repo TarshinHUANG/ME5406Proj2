@@ -10,14 +10,23 @@ import numpy as np
 import statistics
 import tensorflow as tf
 import tqdm
+import random
 from tensorflow.keras import layers
 from typing import List, Tuple
+from env import Ball_env  # Import environment
 
-# Import environment
-from env import Ball_env
+# Hyper-parameters to be adjusted here ##############################################################
+max_episodes = 10000  # End training after this number of episode
+max_steps_per_episode = 1000  # End episode after this number of timesteps\
+num_hl_1 = 40  # Number of first hidden layer
+num_hl_2 = 20  # Number of second hidden layer
+# epsilon = 0.1  # Exploration rate
+# how_to_consider_good_enough = False  # Threshold that training stops
+gamma = 0.99  # Discount factor for future rewards
+#####################################################################################################
 
-env = Ball_env()
-
+episode_num = 0
+reach_count = 0
 
 class AdvantageActorCritic(tf.keras.Model):
     """Combined actor-critic network."""
@@ -36,26 +45,37 @@ class AdvantageActorCritic(tf.keras.Model):
         return self.actor(h2), self.critic(h2)
 
 
-A2Cmodel = AdvantageActorCritic(num_actions=9, num_hidden_1_unit=40, num_hidden_2_unit=20)
-
-
 # 1. Collecting training data
 def env_step(action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns state, reward and done flag given an action."""
-    # Assume env is the environment package.
-    env.render()
+    # Env is the environment package.
     state, reward, done = env.step(action)
+    # if episode_num % 100 == 0:
+        # env.render()
     state = np.array(state)
     return state.astype(np.float32), np.array(reward, np.float32), np.array(done, np.int32)
 
 
+# Tensorflow Env
 def tf_env_step(action: tf.Tensor) -> List[tf.Tensor]:
     return tf.numpy_function(env_step, [action], [tf.float32, tf.float32, tf.int32])
+
+
+def explore_action_probs(action_probs_t: tf.Tensor, epsilon: float) -> tf.Tensor:
+    action_probs_t = action_probs_t.numpy()
+    for action_num in range(9):
+        action_probs_t[0][action_num] = (1.0-epsilon) * action_probs_t[0][action_num] + epsilon / 9
+        # Calculate the logit value of the policy with exploration
+    for action_num in range(9):
+        action_probs_t[0][action_num] = np.log(action_probs_t[0][action_num]/(1-action_probs_t[0][action_num]))
+    action_logits_t = tf.convert_to_tensor(action_probs_t, dtype=tf.float32)
+    return action_logits_t
 
 
 def run_episode(initial_state: tf.Tensor, model: tf.keras.Model, max_steps: int)\
         -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
     """Runs a single episode to collect training data."""
+    global reach_count
 
     action_probs = tf.TensorArray(dtype=tf.float32, size=0, dynamic_size=True)
     values = tf.TensorArray(dtype=tf.float32, size=0, dynamic_size=True)
@@ -70,15 +90,21 @@ def run_episode(initial_state: tf.Tensor, model: tf.keras.Model, max_steps: int)
 
         # Run the model and to get action probabilities and critic value
         action_logits_t, value = model(state)
+
         # Sample next action from the action probability distribution
         action = tf.random.categorical(action_logits_t, 1)[0, 0]
+        action_probs_t = tf.nn.softmax(action_logits_t)
+
+        # action_logits_t = explore_action_probs(action_probs_t, epsilon)
+        # action = tf.random.categorical(action_logits_t, 1)[0, 0]
+        # action_probs_t = tf.nn.softmax(action_logits_t)
+
+        action_probs = action_probs.write(t, action_probs_t[0, action])
 
         # Store critic values
         values = values.write(t, tf.squeeze(value))
 
         # Store log probability of the action chosen
-        action_probs_t = tf.nn.softmax(action_logits_t)
-        action_probs = action_probs.write(t, action_probs_t[0, action])
 
         # Apply action to the environment to get next state and reward
         state, reward, done = tf_env_step(action)
@@ -90,6 +116,7 @@ def run_episode(initial_state: tf.Tensor, model: tf.keras.Model, max_steps: int)
         done = tf.cast(done, tf.bool)
         if done:
             print('Reached the target!!!')
+            reach_count += 1
             break
     action_probs = action_probs.stack()
     values = values.stack()
@@ -99,9 +126,6 @@ def run_episode(initial_state: tf.Tensor, model: tf.keras.Model, max_steps: int)
 
 
 # 2. Computing expected returns
-eps = np.finfo(np.float32).eps.item()  # Smallest number recognizable by the float.
-
-
 def get_expected_return(rewards: tf.Tensor, gamma: float, standardize: bool = True) -> tf.Tensor:
     """Compute expected returns per timestep."""
 
@@ -126,25 +150,20 @@ def get_expected_return(rewards: tf.Tensor, gamma: float, standardize: bool = Tr
 
 
 # 3. The actor-critic loss
-huber_loss = tf.keras.losses.Huber(reduction=tf.keras.losses.Reduction.SUM)
-
-
 def compute_loss(action_probs: tf.Tensor,  values: tf.Tensor,  returns: tf.Tensor) -> tf.Tensor:
     """Computes the combined actor-critic loss."""
     advantage = returns - values
-    action_log_probs = tf.math.log(action_probs)
 
+    action_log_probs = tf.math.log(action_probs)
     actor_loss = -tf.math.reduce_sum(action_log_probs * advantage)
     critic_loss = huber_loss(values, returns)
+    print('Actor Loss:', actor_loss.numpy(), 'Critic Loss:', critic_loss.numpy())
     total_loss = actor_loss + critic_loss
 
     return total_loss
 
 
 # 4. Defining the training step to update parameters
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
-
-
 def episode_train(initial_state: tf.Tensor, model: tf.keras.Model, optimizer: tf.keras.optimizers.Optimizer,
                gamma: float, max_steps_per_episode: int) -> tf.Tensor:
     """Runs a model training step."""
@@ -153,7 +172,6 @@ def episode_train(initial_state: tf.Tensor, model: tf.keras.Model, optimizer: tf
 
         # Run the model for one episode to collect training data
         action_probs, values, rewards = run_episode(initial_state, model, max_steps_per_episode)
-
         # Calculate expected returns
         returns = get_expected_return(rewards, gamma)
 
@@ -173,19 +191,23 @@ def episode_train(initial_state: tf.Tensor, model: tf.keras.Model, optimizer: tf
 
 
 # 5. Run the training loop
-max_episodes = 1000  # End training after this number of episode
-max_steps_per_episode = 1000  # End episode after this number of timesteps
-how_to_consider_good_enough = False
+env = Ball_env()  # Setup simulation environment
+# Create A2C model
+A2Cmodel = AdvantageActorCritic(num_actions=9, num_hidden_1_unit=num_hl_1, num_hidden_2_unit=num_hl_2)
+eps = np.finfo(np.float32).eps.item()  # Smallest number recognizable by the float.
+huber_loss = tf.keras.losses.Huber(reduction=tf.keras.losses.Reduction.SUM)
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
+
+
 
 running_reward = 0  # Real-time averaged reward
-gamma = 0.99  # Discount factor for future rewards
-
 # Deque to keep last 100 episodes reward
 episodes_reward: collections.deque = collections.deque(maxlen=100)
 
 # Total episode loop of training
 with tqdm.trange(max_episodes) as t:
     for i in t:
+        episode_num = i
         initial_state = tf.constant(env.reset(), dtype=tf.float32)
         episode_reward = episode_train(initial_state, A2Cmodel, optimizer, gamma, max_steps_per_episode)
 
@@ -199,8 +221,8 @@ with tqdm.trange(max_episodes) as t:
         if i % 10 == 0:
             print('\n')
             print(f'Episode {i}: average reward: {running_reward}')
-
-        if how_to_consider_good_enough:
+        if reach_count > 100:
             break
 
 print(f'\nSolved at episode {i}: average reward: {running_reward:.2f}!')
+print('Reached count: ', reach_count)
