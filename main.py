@@ -215,7 +215,7 @@ with tqdm.trange(max_episodes) as t:
         running_reward = statistics.mean(episodes_reward)
 
         t.set_description(f'Episode {i}')
-        t.set_postfix(episode_reward=episode_reward, running_reward=running_reward)
+        t.set_postfix(episode_reward=episode_reward.numpy(), running_reward=running_reward)
 
         # Show average episode reward every 50 episodes
         if i % 10 == 0:
@@ -226,3 +226,4 @@ with tqdm.trange(max_episodes) as t:
 
 print(f'\nSolved at episode {i}: average reward: {running_reward:.2f}!')
 print('Reached count: ', reach_count)
+
