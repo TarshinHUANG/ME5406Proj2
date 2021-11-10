@@ -15,7 +15,7 @@ random_location = False  # True-random location of ball, robot, gate is open
 MAP_WIDTH = 800  # the width of the map
 MAP_LENGTH = 800  # the length of the map
 ROB_SIZE = 50  # the radius of robot (supposing circle)
-BALL_SIZE = 50  # the radius of football (supposing circle)
+BALL_SIZE = 30  # the radius of football (supposing circle)
 ROB_POS = [300, 300, 0]  # the initial location of robot x, y, θ (valid if random location is closed)
 BALL_POS = [500, 500]  # the initial location of football (valid if random location is closed)
 GATE_POS = [700,
@@ -24,9 +24,9 @@ GATE_NUM = 1  # the number of gates
 # range[1,inf] 1-only one gates
 CE_FRI = 0.01  # coefficient of friction
 # range[0,1]. 0-no friction
-MASS_RAT = 1  # the ratio of robot to football
+MASS_RAT = 100  # the ratio of robot to football
 # range(0,inf] inf-robot is far heavier than football
-SLD_THD = 0  # the random sliding's threshold when robot knicking the ball
+SLD_THD = 0.1  # the random sliding's threshold when robot knicking the ball
 # range[0,inf] 0-there is no random sliding on robot
 VEL_THRD = 1  # the max velocity is considered as entering the gate
 DT = 1  # timespan for each round

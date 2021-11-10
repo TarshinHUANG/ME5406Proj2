@@ -553,6 +553,10 @@ if __name__ == '__main__':
     env = Ball_env()
 
     while True:
+        
         for i in range(1000):
             env.render()
+            env.step(env.random_action())
+        env.reset()
+        for i in range(10000):
             env.step(env.random_action())

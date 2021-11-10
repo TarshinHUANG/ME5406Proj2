@@ -51,7 +51,7 @@ def env_step(action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Env is the environment package.
     state, reward, done = env.step(action)
     # if episode_num % 100 == 0:
-        # env.render()
+    env.render()
     state = np.array(state)
     return state.astype(np.float32), np.array(reward, np.float32), np.array(done, np.int32)
 
