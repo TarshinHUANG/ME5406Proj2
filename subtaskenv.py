@@ -445,12 +445,8 @@ class Ball_env(gym.Env):
     def is_end(self):
         is_end = False
         # # situation1: mission complete
-        # if (self.distance(self.ball_pos, self.gate_pos) <= BALL_SIZE and self.ball_vel[0] <= VEL_THRD and self.ball_vel[
-        #     1] <= VEL_THRD):
-        #     is_end = True
-        # # situation2: too much steps
-        # if (self.steps > MAX_STEPS):
-        #     is_end = True
+        if self.distance(self.ball_pos, self.rob_pos) <= (BALL_SIZE+ROB_SIZE):
+            is_end = True
         return is_end
 
     # get distance between two points
