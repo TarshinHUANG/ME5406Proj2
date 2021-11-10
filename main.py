@@ -1,5 +1,5 @@
 # =============================================================================
-#   Filename         : main.py
+#   Filename         : FootballSeek.py
 #   Author           : Xue Junyuan
 #   Description      : Neuron Network and Learning Agent
 #                      Environment and UI embedded from env.py
@@ -13,7 +13,7 @@ import tqdm
 import random
 from tensorflow.keras import layers
 from typing import List, Tuple
-from env import Ball_env  # Import environment
+from subtaskenv import Ball_env  # Import environment
 
 # Hyper-parameters to be adjusted here ##############################################################
 max_episodes = 10000  # End training after this number of episode
@@ -27,6 +27,7 @@ gamma = 0.99  # Discount factor for future rewards
 
 episode_num = 0
 reach_count = 0
+
 
 class AdvantageActorCritic(tf.keras.Model):
     """Combined actor-critic network."""
@@ -51,7 +52,7 @@ def env_step(action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Env is the environment package.
     state, reward, done = env.step(action)
     # if episode_num % 100 == 0:
-    env.render()
+        # env.render()
     state = np.array(state)
     return state.astype(np.float32), np.array(reward, np.float32), np.array(done, np.int32)
 
@@ -195,10 +196,8 @@ env = Ball_env()  # Setup simulation environment
 # Create A2C model
 A2Cmodel = AdvantageActorCritic(num_actions=9, num_hidden_1_unit=num_hl_1, num_hidden_2_unit=num_hl_2)
 eps = np.finfo(np.float32).eps.item()  # Smallest number recognizable by the float.
-huber_loss = tf.keras.losses.Huber(reduction=tf.keras.losses.Reduction.SUM)
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
-
-
+huber_loss = tf.keras.losses.Huber(reduction=tf.keras.losses.Reduction.SUM)  # Calculate huber loss
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)  # Setup optimizer
 
 running_reward = 0  # Real-time averaged reward
 # Deque to keep last 100 episodes reward
@@ -215,7 +214,7 @@ with tqdm.trange(max_episodes) as t:
         running_reward = statistics.mean(episodes_reward)
 
         t.set_description(f'Episode {i}')
-        t.set_postfix(episode_reward=episode_reward, running_reward=running_reward)
+        t.set_postfix(episode_reward=episode_reward.numpy(), running_reward=running_reward)
 
         # Show average episode reward every 50 episodes
         if i % 10 == 0:
@@ -226,4 +225,3 @@ with tqdm.trange(max_episodes) as t:
 
 print(f'\nSolved at episode {i}: average reward: {running_reward:.2f}!')
 print('Reached count: ', reach_count)
-
