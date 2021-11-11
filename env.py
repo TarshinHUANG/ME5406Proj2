@@ -45,7 +45,7 @@ SLD_THD = 0     # the random sliding's threshold when robot knicking the ball
 VEL_THRD = 100  # the max velocity is considered as entering the gate
 SPEED_THRD = 500  # the max speed of the robot and the football
 ANG_SPEED_THRD = 20  # the max angular speed of the robot
-
+ 
 # Reward adjustment
 REACH_GATE = 1000  # when the ball reaches the gate
 REACH_BALL = 100   # when the robot hits the ball
@@ -433,7 +433,7 @@ class Ball_env(gym.Env):
 
     # generate random action for testing
     def random_action(self):
-        action = random.randint(1, 9)
+        action = random.randint(0, 8)
         return action
 
     # detect collision
