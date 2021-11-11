@@ -6,11 +6,9 @@ This subtask is try to let the robot learn to hit the football.
 
 # Learning Process
 
-![image](\resourceforMD\1.png)
+![image](https://github.com/TarshinHUANG/ME5406Proj2/blob/Subtask1-kick/resourceforMD/1.png?raw=true)
 
-![image](\resourceforMD\2.png)
+![image](https://github.com/TarshinHUANG/ME5406Proj2/blob/Subtask1-kick/resourceforMD/2.png?raw=true)
 
 
-
-![Alt text](\resourceforMD\2.png?raw=true "Title")
 
