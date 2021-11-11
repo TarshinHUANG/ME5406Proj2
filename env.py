@@ -8,39 +8,37 @@ from sympy import symbols, Eq, solve
 import datetime
 
 # define some buttons
-random_location = False  # True-random location of ball, robot, gate is open
+RAM_BALL = False  # True-random location of the football
 
 # define some parameters
-MAP_WIDTH = 800  # the width of the map
-MAP_LENGTH = 800  # the length of the map
-ROB_POS = (300, 300, 0)  # the initial location of robot x, y, θ (valid if random location is closed)
-BALL_POS = (500, 500)  # the initial location of football (valid if random location is closed)
-GATE_POS = (700,
-            700)  # the initial location of gate (valid if random location is closed), this can be n-D array for n gates
-GATE_NUM = 1  # the number of gates
-# range[1,inf] 1-only one gates
-# range[0,1]. 0-no friction
-# range(0,inf] inf-robot is far heavier than football
-# range[0,inf] 0-there is no random sliding on robot
-DT = 0.01  # timespan for each round
-MAX_STEPS = 100000  # the max_steps for each episode
+MAP_WIDTH = 800             # the width of the map
+MAP_LENGTH = 800            # the length of the map
+ROB_POS = (300, 300, 0)     # the initial location of robot x, y, θ (valid if random location is closed)
+BALL_POS = (500, 500)       # the initial location of football (valid if random location is closed)
+GATE_POS = (700,700)        # the initial location of gate (valid if random location is closed), this can be n-D array for n gates
+DT = 0.01                   # timespan for each round
+MAX_STEPS = 100000          # the max_steps for each episode
 
 # Adjust
-ROB_SIZE = 50  # the radius of robot (supposing circle)
-BALL_SIZE = 50  # the radius of football (supposing circle)
-CE_FRI = 0.0  # coefficient of friction
-MASS_RAT = 1  # the ratio of robot to football
-SLD_THD = 0  # the random sliding's threshold when robot knicking the ball
-VEL_THRD = 1  # the max velocity is considered as entering the gate
-SPEED_THRD = 500  # the max speed of the robot and the football
-ANG_SPEED_THRD = 20  # the max angular speed of the robot
-
+ROB_SIZE = 50           # the radius of robot (supposing circle)
+BALL_SIZE = 50          # the radius of football (supposing circle)
+CE_FRI = 0.01           # coefficient of friction
+                        # range[0,1]. 0-no friction
+MASS_RAT = 1            # the ratio of robot to football
+                        # range(0,inf] inf-robot is far heavier than football
+SLD_THD = 0             # the random sliding's threshold when robot knicking the ball
+                        # range[0,inf] 0-there is no random sliding on robot
+VEL_THRD = 100          # the max velocity is considered as entering the gate
+SPEED_THRD = 500        # the max speed of the robot and the football
+ANG_SPEED_THRD = 20     # the max angular speed of the robot
+ 
 # Reward adjustment
-REACH_BALL = +100  # when the robot hits the ball
-HIT_WALL = 0  # the robot hits the wall
-DIS_RB_N = 1  # the nearer distance reward between the robot and the ball
-DIS_RB_F = -1  # the farther distance reward between the robot and the ball
-STEP = -3  # each step
+REACH_GATE = 1000   # when the ball reaches the gate
+REACH_BALL = 100    # when the robot hits the ball
+HIT_WALL = -10        # the robot hits the wall
+DIS_RB_N = -0.1        # the nearer distance reward between the robot and the ball
+DIS_RB_F = -1       # the farther distance reward between the robot and the ball
+STEP = -3           # each step
 '''
     Oberservation:
         robot position, football position, robot speed, football speed, robot orientation, gate position
@@ -63,8 +61,12 @@ class Ball_env(gym.Env):
         self.rob_pos = [0, 0, 0]
         self.gate_pos[0] = GATE_POS[0]  # gate position
         self.gate_pos[1] = GATE_POS[1]  # gate position
-        self.ball_pos[0] = BALL_POS[0]  # ball position
-        self.ball_pos[1] = BALL_POS[1]  # ball position
+        if RAM_BALL:
+            self.ball_pos[0] = round(random.uniform(0,MAP_LENGTH))
+            self.ball_pos[1] = round(random.uniform(0,MAP_WIDTH))
+        else:
+            self.ball_pos[0] = BALL_POS[0]  # ball position
+            self.ball_pos[1] = BALL_POS[1]  # ball position
         self.ball_vel = [0, 0]  # ball velocity, vx, vy
         self.rob_pos[0] = ROB_POS[0]  # robot position
         self.rob_pos[1] = ROB_POS[1]  # robot position
@@ -75,19 +77,19 @@ class Ball_env(gym.Env):
         self.ignore_hitting = False  # avoid bug when hitting
         self.reward = 0  # the reward
         self.col_type = 0  # collision type
-        self.label = pyglet.text.Label("reward:",
-                                       font_name='Times New Roman',
-                                       font_size=18,
-                                       x=18 * 4, y=MAP_WIDTH - 36,
-                                       anchor_x='center', anchor_y='center')
+        
 
     # reset environment
     def reset(self):
         self.gate_pos[0] = GATE_POS[0]  # gate position
         self.gate_pos[1] = GATE_POS[1]  # gate position
-        self.ball_pos[0] = BALL_POS[0]  # ball position
-        self.ball_pos[1] = BALL_POS[1]  # ball position
         self.ball_vel = [0, 0]  # ball velocity, vx, vy
+        if RAM_BALL:
+            self.ball_pos[0] = round(random.uniform(BALL_SIZE,MAP_LENGTH-BALL_SIZE))
+            self.ball_pos[1] = round(random.uniform(BALL_SIZE,MAP_WIDTH-BALL_SIZE))
+        else:
+            self.ball_pos[0] = BALL_POS[0]  # ball position
+            self.ball_pos[1] = BALL_POS[1]  # ball position
         self.rob_pos[0] = ROB_POS[0]  # robot position
         self.rob_pos[1] = ROB_POS[1]  # robot position
         self.rob_pos[2] = ROB_POS[2]  # robot position
@@ -409,7 +411,7 @@ class Ball_env(gym.Env):
 
     # generate random action for testing
     def random_action(self):
-        action = random.randint(1, 9)
+        action = random.randint(0, 8)
         return action
 
     # detect collision
@@ -481,6 +483,13 @@ class Viewer(pyglet.window.Window):
         self.gate.height = 50
         self.gate.anchor_x = self.gate.width // 2
         self.gate.anchor_y = self.gate.height // 2
+        # show reward text
+        self.label = pyglet.text.Label("reward:",
+                                       font_name='Times New Roman',
+                                       font_size=18,
+                                       x=18 * 4, y=MAP_WIDTH - 36,
+                                       anchor_x='center', anchor_y='center')
+
 
     # refresh and show the screen
     def render(self, rob_pos, ball_pos, gate_pos, reward):
