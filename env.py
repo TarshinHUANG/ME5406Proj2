@@ -1,17 +1,3 @@
-# =============================================================================
-#   Filename         : Ball_env.py
-#
-#   Created On       : 2021-10-16 1:33
-#
-#   Last Modified    :
-#
-#   Revision         : 1.0
-#
-#   Author           : HuangYeshun
-#
-#   Description      : The env based on velocity
-# =============================================================================
-# import
 import gym
 import pyglet
 from pyglet import image
@@ -50,11 +36,11 @@ SPEED_THRD = 500  # the max speed of the robot and the football
 ANG_SPEED_THRD = 20  # the max angular speed of the robot
 
 # Reward adjustment
-REACH_BALL= +100    # when the robot hits the ball
-HIT_WALL = 0     # the robot hits the wall
-DIS_RB_N= 1       # the nearer distance reward between the robot and the ball
-DIS_RB_F= -1       # the farther distance reward between the robot and the ball
-STEP = -0.02        # each step
+REACH_BALL = +100  # when the robot hits the ball
+HIT_WALL = 0  # the robot hits the wall
+DIS_RB_N = 1  # the nearer distance reward between the robot and the ball
+DIS_RB_F = -1  # the farther distance reward between the robot and the ball
+STEP = -3  # each step
 '''
     Oberservation:
         robot position, football position, robot speed, football speed, robot orientation, gate position
@@ -68,13 +54,13 @@ class Ball_env(gym.Env):
     # inherit 5 methods from gym - step, reset, render, close, seed
 
     viewer = None  # initialize viewer as none
-    old_distanceBG = -1 # store the distance between the football and the gate
-    old_distanceRB = -1 # store the distance between the robot and the football
+    old_distanceBG = -1  # store the distance between the football and the gate
+    old_distanceRB = -1  # store the distance between the robot and the football
 
     def __init__(self):
-        self.gate_pos = [0,0]
-        self.ball_pos = [0,0]
-        self.rob_pos = [0,0,0]
+        self.gate_pos = [0, 0]
+        self.ball_pos = [0, 0]
+        self.rob_pos = [0, 0, 0]
         self.gate_pos[0] = GATE_POS[0]  # gate position
         self.gate_pos[1] = GATE_POS[1]  # gate position
         self.ball_pos[0] = BALL_POS[0]  # ball position
@@ -87,13 +73,14 @@ class Ball_env(gym.Env):
         self.rob_wheel_vel = [0, 0]  # robot wheel velocity
         self.steps = 0  # the steps
         self.ignore_hitting = False  # avoid bug when hitting
-        self.reward = 0 # the reward
-        self.col_type = 0 # collision type
+        self.reward = 0  # the reward
+        self.col_type = 0  # collision type
         self.label = pyglet.text.Label("reward:",
-                          font_name='Times New Roman',
-                          font_size=18,
-                          x=18*4, y=MAP_WIDTH-36,
-                          anchor_x='center', anchor_y='center')
+                                       font_name='Times New Roman',
+                                       font_size=18,
+                                       x=18 * 4, y=MAP_WIDTH - 36,
+                                       anchor_x='center', anchor_y='center')
+
     # reset environment
     def reset(self):
         self.gate_pos[0] = GATE_POS[0]  # gate position
@@ -108,8 +95,8 @@ class Ball_env(gym.Env):
         self.rob_wheel_vel = [0, 0]  # robot wheel velocity
         self.steps = 0  # the steps
         self.ignore_hitting = False  # avoid bug when hitting
-        self.reward = 0 # the reward
-        self.col_type = 0 # collision type
+        self.reward = 0  # the reward
+        self.col_type = 0  # collision type
         return [self.gate_pos[0], self.gate_pos[1], self.ball_pos[0], self.ball_pos[0], self.ball_vel[0],
                 self.ball_vel[1], self.rob_pos[0], self.rob_pos[1], self.rob_pos[2],
                 self.rob_vel[0], self.rob_vel[1], self.rob_vel[2]]
@@ -132,6 +119,7 @@ class Ball_env(gym.Env):
         else:
             print('Wrong action input!!!')
         return action
+
     def step(self, action_class):
         action = self.action_two_wheel(action_class)
         self.update_velocity(action)  # update the velocity for football and robot
@@ -148,7 +136,7 @@ class Ball_env(gym.Env):
     def render(self):
         if self.viewer is None:  # if there is no viewer, then create one
             self.viewer = Viewer(self.rob_pos, self.ball_pos, self.gate_pos)
-        self.viewer.render(self.rob_pos, self.ball_pos, self.gate_pos,self.reward)
+        self.viewer.render(self.rob_pos, self.ball_pos, self.gate_pos, self.reward)
 
     def update_velocity(self, action):
         # update wheel velocity based on action
@@ -393,20 +381,20 @@ class Ball_env(gym.Env):
         new_distanceRB = self.distance(self.rob_pos, self.ball_pos)
         if self.old_distanceBG == -1:
             # first value of old_distance
-            self.old_distanceBG = new_distanceBG 
+            self.old_distanceBG = new_distanceBG
         if self.old_distanceRB == -1:
             # first value of old_distance
-            self.old_distanceRB = new_distanceRB 
+            self.old_distanceRB = new_distanceRB
         if (self.col_type == 1):
             # hits the ball
             reward = REACH_BALL
-        elif (self.col_type ==2 ):
+        elif (self.col_type == 2):
             # the robot hits the wall
             reward = HIT_WALL
-        elif (new_distanceRB < self.old_distanceRB ):
+        elif (new_distanceRB < self.old_distanceRB):
             # get closer to the ball
             reward = DIS_RB_N
-        elif (new_distanceRB > self.old_distanceRB ):
+        elif (new_distanceRB > self.old_distanceRB):
             # get farther to the ball
             reward = DIS_RB_F
         else:
@@ -416,7 +404,7 @@ class Ball_env(gym.Env):
         self.old_distanceBG = new_distanceBG
         # store the new distance between the robot and the football
         self.old_distanceRB = new_distanceRB
-        
+
         return reward
 
     # generate random action for testing
@@ -458,7 +446,8 @@ class Ball_env(gym.Env):
 
 
 class Viewer(pyglet.window.Window):
-    frame_cnt = 0 # count the frame 
+    frame_cnt = 0  # count the frame
+
     def __init__(self, rob_pos, ball_pos, gate_pos):
         # vsync=False to not use the monitor FPS (75Hz) as operating rate, instead, the cpu will determine the operating rate
         super(Viewer, self).__init__(width=MAP_LENGTH, height=MAP_WIDTH, resizable=True, caption='FootballCourt',
@@ -471,7 +460,9 @@ class Viewer(pyglet.window.Window):
 
         # load football
         # load the picture, cannot use pyglet.image.load()
-        self.ball = pyglet.resource.image('soccer.png')
+        pyglet.resource.path = ["C:/Users/Jerry.Doo/Desktop"]
+        pyglet.resource.reindex()
+        self.ball = pyglet.resource.image('soccer1.png')
         self.ball.width = 2 * BALL_SIZE
         self.ball.height = 2 * BALL_SIZE
         self.ball.anchor_x = self.ball.width // 2
@@ -492,7 +483,7 @@ class Viewer(pyglet.window.Window):
         self.gate.anchor_y = self.gate.height // 2
 
     # refresh and show the screen
-    def render(self, rob_pos, ball_pos, gate_pos,reward):
+    def render(self, rob_pos, ball_pos, gate_pos, reward):
         # arrange the handlers, otherwise the ui will stuck
         self.dispatch_events()
         # store pictures in the batch
@@ -516,24 +507,24 @@ class Viewer(pyglet.window.Window):
         self.clear()
         # draw the scenarios
         self.batch.draw()
-        
-        # show the rewards   
-        if abs(reward) != 0.01:
-            self.label = pyglet.text.Label("reward:"+str(reward),
-                          font_name='Times New Roman',
-                          font_size=18,
-                          x=18*4, y=MAP_WIDTH-36,
-                          anchor_x='center', anchor_y='center')
-        else:
-            self.frame_cnt = self.frame_cnt+1
 
-        if self.frame_cnt>=500:
-            self.frame_cnt =0
+        # show the rewards
+        if abs(reward) != 0.01:
+            self.label = pyglet.text.Label("reward:" + str(reward),
+                                           font_name='Times New Roman',
+                                           font_size=18,
+                                           x=18 * 4, y=MAP_WIDTH - 36,
+                                           anchor_x='center', anchor_y='center')
+        else:
+            self.frame_cnt = self.frame_cnt + 1
+
+        if self.frame_cnt >= 500:
+            self.frame_cnt = 0
             self.label = pyglet.text.Label("reward:",
-                          font_name='Times New Roman',
-                          font_size=18,
-                          x=18*4, y=MAP_WIDTH-36,
-                          anchor_x='center', anchor_y='center')
+                                           font_name='Times New Roman',
+                                           font_size=18,
+                                           x=18 * 4, y=MAP_WIDTH - 36,
+                                           anchor_x='center', anchor_y='center')
 
         self.label.draw()
 
@@ -545,7 +536,7 @@ if __name__ == '__main__':
     env = Ball_env()
 
     while True:
-        
+
         for i in range(1000):
             env.render()
             env.step(env.random_action())
