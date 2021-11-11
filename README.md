@@ -8,4 +8,4 @@ So the friction will be added.
 
 # Test environment
 
-![image](https://github.com/TarshinHUANG/ME5406Proj2/blob/Subtask2-dribbling/resourceforMD/1.gif?raw=true)
+![image](https://github.com/TarshinHUANG/ME5406Proj2/blob/Subtask3-random/resourceforMD/1.gif?raw=true)
