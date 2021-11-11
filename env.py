@@ -22,29 +22,26 @@ from sympy import symbols, Eq, solve
 import datetime
 
 # define some buttons
-random_location = False  # True-random location of ball, robot, gate is open
+RAM_BALL = True  # True-random location of the football
 
 # define some parameters
 MAP_WIDTH = 800  # the width of the map
 MAP_LENGTH = 800  # the length of the map
 ROB_POS = (300, 300, 0)  # the initial location of robot x, y, θ (valid if random location is closed)
 BALL_POS = (500, 500)  # the initial location of football (valid if random location is closed)
-GATE_POS = (700,
-            700)  # the initial location of gate (valid if random location is closed), this can be n-D array for n gates
-GATE_NUM = 1  # the number of gates
-# range[1,inf] 1-only one gates
-# range[0,1]. 0-no friction
-# range(0,inf] inf-robot is far heavier than football
-# range[0,inf] 0-there is no random sliding on robot
+GATE_POS = (700,700)  # the initial location of gate (valid if random location is closed), this can be n-D array for n gates
 DT = 0.01  # timespan for each round
 MAX_STEPS = 100000  # the max_steps for each episode
 
 # Adjust
-ROB_SIZE = 50  # the radius of robot (supposing circle)
+ROB_SIZE = 50   # the radius of robot (supposing circle)
 BALL_SIZE = 50  # the radius of football (supposing circle)
-CE_FRI = 0.01  # coefficient of friction
-MASS_RAT = 1  # the ratio of robot to football
-SLD_THD = 0  # the random sliding's threshold when robot knicking the ball
+CE_FRI = 0.01   # coefficient of friction
+                # range[0,1]. 0-no friction
+MASS_RAT = 1    # the ratio of robot to football
+                # range(0,inf] inf-robot is far heavier than football
+SLD_THD = 0     # the random sliding's threshold when robot knicking the ball
+                # range[0,inf] 0-there is no random sliding on robot
 VEL_THRD = 100  # the max velocity is considered as entering the gate
 SPEED_THRD = 500  # the max speed of the robot and the football
 ANG_SPEED_THRD = 20  # the max angular speed of the robot
@@ -78,8 +75,12 @@ class Ball_env(gym.Env):
         self.rob_pos = [0, 0, 0]
         self.gate_pos[0] = GATE_POS[0]  # gate position
         self.gate_pos[1] = GATE_POS[1]  # gate position
-        self.ball_pos[0] = BALL_POS[0]  # ball position
-        self.ball_pos[1] = BALL_POS[1]  # ball position
+        if RAM_BALL:
+            self.ball_pos[0] = round(random.uniform(0,MAP_LENGTH))
+            self.ball_pos[1] = round(random.uniform(0,MAP_WIDTH))
+        else:
+            self.ball_pos[0] = BALL_POS[0]  # ball position
+            self.ball_pos[1] = BALL_POS[1]  # ball position
         self.ball_vel = [0, 0]  # ball velocity, vx, vy
         self.rob_pos[0] = ROB_POS[0]  # robot position
         self.rob_pos[1] = ROB_POS[1]  # robot position
@@ -100,9 +101,13 @@ class Ball_env(gym.Env):
     def reset(self):
         self.gate_pos[0] = GATE_POS[0]  # gate position
         self.gate_pos[1] = GATE_POS[1]  # gate position
-        self.ball_pos[0] = BALL_POS[0]  # ball position
-        self.ball_pos[1] = BALL_POS[1]  # ball position
         self.ball_vel = [0, 0]  # ball velocity, vx, vy
+        if RAM_BALL:
+            self.ball_pos[0] = round(random.uniform(BALL_SIZE,MAP_LENGTH-BALL_SIZE))
+            self.ball_pos[1] = round(random.uniform(BALL_SIZE,MAP_WIDTH-BALL_SIZE))
+        else:
+            self.ball_pos[0] = BALL_POS[0]  # ball position
+            self.ball_pos[1] = BALL_POS[1]  # ball position
         self.rob_pos[0] = ROB_POS[0]  # robot position
         self.rob_pos[1] = ROB_POS[1]  # robot position
         self.rob_pos[2] = ROB_POS[2]  # robot position
@@ -555,9 +560,8 @@ if __name__ == '__main__':
 
     while True:
 
-        for i in range(1000):
+        for i in range(100):
             env.render()
             env.step(env.random_action())
         env.reset()
-        for i in range(10000):
-            env.step(env.random_action())
+        
