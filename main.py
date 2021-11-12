@@ -13,7 +13,7 @@ import tqdm
 import random
 from tensorflow.keras import layers
 from typing import List, Tuple
-from subtaskenv import Ball_env  # Import environment
+from env import Ball_env  # Import environment
 
 # Hyper-parameters to be adjusted here ##############################################################
 max_episodes = 10000  # End training after this number of episode
@@ -52,7 +52,7 @@ def env_step(action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Env is the environment package.
     state, reward, done = env.step(action)
     # if episode_num % 100 == 0:
-        # env.render()
+    env.render()
     state = np.array(state)
     return state.astype(np.float32), np.array(reward, np.float32), np.array(done, np.int32)
 
@@ -113,7 +113,6 @@ def run_episode(initial_state: tf.Tensor, model: tf.keras.Model, max_steps: int)
 
         # Store reward
         rewards = rewards.write(t, reward)
-
         done = tf.cast(done, tf.bool)
         if done:
             print('Reached the target!!!')
@@ -220,8 +219,8 @@ with tqdm.trange(max_episodes) as t:
         if i % 10 == 0:
             print('\n')
             print(f'Episode {i}: average reward: {running_reward}')
-        if reach_count > 100:
-            break
+        # if reach_count > 100:
+        #     break
 
 print(f'\nSolved at episode {i}: average reward: {running_reward:.2f}!')
 print('Reached count: ', reach_count)

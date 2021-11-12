@@ -25,34 +25,34 @@ import datetime
 RAM_BALL = True  # True-random location of the football
 
 # define some parameters
-MAP_WIDTH = 800  # the width of the map
-MAP_LENGTH = 800  # the length of the map
-ROB_POS = (300, 300, 0)  # the initial location of robot x, y, θ (valid if random location is closed)
-BALL_POS = (500, 500)  # the initial location of football (valid if random location is closed)
-GATE_POS = (700,700)  # the initial location of gate (valid if random location is closed), this can be n-D array for n gates
-DT = 0.01  # timespan for each round
-MAX_STEPS = 100000  # the max_steps for each episode
+MAP_WIDTH = 800             # the width of the map
+MAP_LENGTH = 800            # the length of the map
+ROB_POS = (300, 300, 0)     # the initial location of robot x, y, θ (valid if random location is closed)
+BALL_POS = (500, 500)       # the initial location of football (valid if random location is closed)
+GATE_POS = (700,700)        # the initial location of gate (valid if random location is closed), this can be n-D array for n gates
+DT = 0.01                   # timespan for each round
+MAX_STEPS = 100000          # the max_steps for each episode
 
 # Adjust
-ROB_SIZE = 50   # the radius of robot (supposing circle)
-BALL_SIZE = 50  # the radius of football (supposing circle)
-CE_FRI = 0.01   # coefficient of friction
-                # range[0,1]. 0-no friction
-MASS_RAT = 1    # the ratio of robot to football
-                # range(0,inf] inf-robot is far heavier than football
-SLD_THD = 0     # the random sliding's threshold when robot knicking the ball
-                # range[0,inf] 0-there is no random sliding on robot
-VEL_THRD = 100  # the max velocity is considered as entering the gate
-SPEED_THRD = 500  # the max speed of the robot and the football
-ANG_SPEED_THRD = 20  # the max angular speed of the robot
+ROB_SIZE = 50           # the radius of robot (supposing circle)
+BALL_SIZE = 30          # the radius of football (supposing circle)
+CE_FRI = 0.01           # coefficient of friction
+                        # range[0,1]. 0-no friction
+MASS_RAT = 1            # the ratio of robot to football
+                        # range(0,inf] inf-robot is far heavier than football
+SLD_THD = 0             # the random sliding's threshold when robot knicking the ball
+                        # range[0,inf] 0-there is no random sliding on robot
+VEL_THRD = 100          # the max velocity is considered as entering the gate
+SPEED_THRD = 500        # the max speed of the robot and the football
+ANG_SPEED_THRD = 20     # the max angular speed of the robot
  
 # Reward adjustment
-REACH_GATE = 1000  # when the ball reaches the gate
-REACH_BALL = 100   # when the robot hits the ball
-HIT_WALL = 0  # the robot hits the wall
-DIS_RB_N = 1  # the nearer distance reward between the robot and the ball
-DIS_RB_F = -1  # the farther distance reward between the robot and the ball
-STEP = -3  # each step
+REACH_GATE = 1000   # when the ball reaches the gate
+REACH_BALL = 100    # when the robot hits the ball
+HIT_WALL = -10        # the robot hits the wall
+DIS_RB_N = -0.1        # the nearer distance reward between the robot and the ball
+DIS_RB_F = -1       # the farther distance reward between the robot and the ball
+STEP = -3           # each step
 '''
     Oberservation:
         robot position, football position, robot speed, football speed, robot orientation, gate position
@@ -91,11 +91,7 @@ class Ball_env(gym.Env):
         self.ignore_hitting = False  # avoid bug when hitting
         self.reward = 0  # the reward
         self.col_type = 0  # collision type
-        self.label = pyglet.text.Label("reward:",
-                                       font_name='Times New Roman',
-                                       font_size=18,
-                                       x=18 * 4, y=MAP_WIDTH - 36,
-                                       anchor_x='center', anchor_y='center')
+        
 
     # reset environment
     def reset(self):
@@ -405,11 +401,7 @@ class Ball_env(gym.Env):
         if self.old_distanceRB == -1:
             # first value of old_distance
             self.old_distanceRB = new_distanceRB
-        if (self.distance(self.ball_pos, self.gate_pos) <= BALL_SIZE and self.ball_vel[0] <= VEL_THRD and
-                self.ball_vel[1] <= VEL_THRD):
-            # the football reach the gate
-            reward = REACH_GATE
-        elif self.col_type == 1:
+        if self.col_type == 1:
             # hits the ball
             reward = REACH_BALL
         elif self.col_type == 2:
@@ -457,8 +449,7 @@ class Ball_env(gym.Env):
     def is_end(self):
         is_end = False
         # situation1: the robot hits the football
-        if (self.distance(self.ball_pos, self.gate_pos) <= BALL_SIZE and self.ball_vel[0] <= VEL_THRD and
-                self.ball_vel[1] <= VEL_THRD):
+        if (self.col_type==1):
             is_end = True
         # # situation2: too much steps
         # if (self.steps > MAX_STEPS):
@@ -504,6 +495,12 @@ class Viewer(pyglet.window.Window):
         self.gate.height = 50
         self.gate.anchor_x = self.gate.width // 2
         self.gate.anchor_y = self.gate.height // 2
+        # show reward text
+        self.label = pyglet.text.Label("reward:",
+                                       font_name='Times New Roman',
+                                       font_size=18,
+                                       x=18 * 4, y=MAP_WIDTH - 36,
+                                       anchor_x='center', anchor_y='center')
 
     # refresh and show the screen
     def render(self, rob_pos, ball_pos, gate_pos, reward):
@@ -532,7 +529,7 @@ class Viewer(pyglet.window.Window):
         self.batch.draw()
 
         # show the rewards
-        if abs(reward) != 0.01:
+        if reward != DIS_RB_F and reward!=DIS_RB_N and reward!=STEP:
             self.label = pyglet.text.Label("reward:" + str(reward),
                                            font_name='Times New Roman',
                                            font_size=18,
@@ -560,7 +557,7 @@ if __name__ == '__main__':
 
     while True:
 
-        for i in range(100):
+        for i in range(10000):
             env.render()
             env.step(env.random_action())
         env.reset()
