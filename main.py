@@ -1,5 +1,5 @@
 # =============================================================================
-#   Filename         : FootballSeek.py
+#   Filename         : main.py
 #   Author           : Xue Junyuan
 #   Description      : Neuron Network and Learning Agent
 #                      Environment and UI embedded from env.py
@@ -13,7 +13,7 @@ import tqdm
 import random
 from tensorflow.keras import layers
 from typing import List, Tuple
-from subtaskenv import Ball_env  # Import environment
+from env import Ball_env  # Import environment
 
 # Hyper-parameters to be adjusted here ##############################################################
 max_episodes = 10000  # End training after this number of episode
@@ -27,7 +27,6 @@ gamma = 0.99  # Discount factor for future rewards
 
 episode_num = 0
 reach_count = 0
-
 
 class AdvantageActorCritic(tf.keras.Model):
     """Combined actor-critic network."""
@@ -52,7 +51,7 @@ def env_step(action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Env is the environment package.
     state, reward, done = env.step(action)
     # if episode_num % 100 == 0:
-        # env.render()
+    #    env.render()
     state = np.array(state)
     return state.astype(np.float32), np.array(reward, np.float32), np.array(done, np.int32)
 
@@ -214,10 +213,10 @@ with tqdm.trange(max_episodes) as t:
         running_reward = statistics.mean(episodes_reward)
 
         t.set_description(f'Episode {i}')
-        t.set_postfix(episode_reward=episode_reward.numpy(), running_reward=running_reward)
+        t.set_postfix(episode_reward=episode_reward.numpy())
 
         # Show average episode reward every 50 episodes
-        if i % 10 == 0:
+        if i % 100 == 0:
             print('\n')
             print(f'Episode {i}: average reward: {running_reward}')
         if reach_count > 100:
