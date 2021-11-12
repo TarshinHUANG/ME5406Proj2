@@ -27,7 +27,7 @@ gamma = 0.99  # Discount factor for future rewards
 LOAD_WEIGHT = False  # load trained weight or not
 LOAD_WEIGHT_DIR = 'trial'
 SAVE_WEIGHT = True  # save trained weight or not
-SAVE_WEIGHT_DIR = 'subtask2_(-0.1,-1,-3)'
+SAVE_WEIGHT_DIR = 'subtask2_(+1,-1,-3)'
 #####################################################################################################
 
 episode_num = 0
@@ -202,25 +202,32 @@ running_reward = 0  # Real-time averaged reward
 # Deque to keep last 100 episodes reward
 episodes_reward: collections.deque = collections.deque(maxlen=100)
 
+accomplished = False
 # Total episode loop of training
-with tqdm.trange(max_episodes) as t:
-    for i in t:
-        episode_num = i
-        initial_state = tf.constant(env.reset(), dtype=tf.float32)
-        episode_reward = episode_train(initial_state, A2Cmodel, optimizer, gamma, max_steps_per_episode)
+while not accomplished:
+    with tqdm.trange(max_episodes) as t:
+        for i in t:
+            episode_num = i
+            initial_state = tf.constant(env.reset(), dtype=tf.float32)
+            episode_reward = episode_train(initial_state, A2Cmodel, optimizer, gamma, max_steps_per_episode)
 
-        episodes_reward.append(episode_reward.numpy())
-        running_reward = statistics.mean(episodes_reward)
+            episodes_reward.append(episode_reward.numpy())
+            running_reward = statistics.mean(episodes_reward)
 
-        t.set_description(f'Episode {i}')
-        t.set_postfix(episode_reward=episode_reward.numpy())
+            t.set_description(f'Episode {i}')
+            t.set_postfix(episode_reward=episode_reward.numpy())
 
-        # Show average episode reward every 50 episodes
-        if i % 100 == 0:
-            print('\n')
-            print(f'Episode {i}: average reward: {running_reward}')
-        if reach_count > REACH_COUNT_THRESHOLD:
-            break
+            # Show average episode reward every 50 episodes
+            if i % 100 == 0:
+                print('\n')
+                print(f'Episode {i}: average reward: {running_reward}')
+            if reach_count > REACH_COUNT_THRESHOLD:
+                accomplished = True
+                print('Accomplished!')
+                break
+            elif reach_count == 0 and i > 500:
+                print('Not converge within 500 episodes.')
+                break
 
 print(f'\nSolved at episode {i}: average reward: {running_reward:.2f}!')
 print('Reached count: ', reach_count)
