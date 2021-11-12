@@ -27,7 +27,7 @@ gamma = 0.99  # Discount factor for future rewards
 LOAD_WEIGHT = False  # load trained weight or not
 LOAD_WEIGHT_DIR = 'trial'
 SAVE_WEIGHT = True  # save trained weight or not
-SAVE_WEIGHT_DIR = 'subtask2_(+1,-1,-3)'
+SAVE_WEIGHT_DIR = 'subtask1_(+1,-1,-3)'
 #####################################################################################################
 
 episode_num = 0
@@ -197,14 +197,14 @@ if LOAD_WEIGHT:
 eps = np.finfo(np.float32).eps.item()  # Smallest number recognizable by the float.
 huber_loss = tf.keras.losses.Huber(reduction=tf.keras.losses.Reduction.SUM)  # Calculate huber loss
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)  # Setup optimizer
-
-running_reward = 0  # Real-time averaged reward
-# Deque to keep last 100 episodes reward
-episodes_reward: collections.deque = collections.deque(maxlen=100)
-
 accomplished = False
-# Total episode loop of training
+
 while not accomplished:
+    running_reward = 0  # Real-time averaged reward
+    # Deque to keep last 100 episodes reward
+    episodes_reward: collections.deque = collections.deque(maxlen=100)
+
+    # Total episode loop of training
     with tqdm.trange(max_episodes) as t:
         for i in t:
             episode_num = i
@@ -225,7 +225,8 @@ while not accomplished:
                 accomplished = True
                 print('Accomplished!')
                 break
-            elif reach_count == 0 and i > 500:
+            elif reach_count < 10 and i > 500:
+                A2Cmodel = AdvantageActorCritic(num_actions=9, num_hidden_1_unit=num_hl_1, num_hidden_2_unit=num_hl_2)
                 print('Not converge within 500 episodes.')
                 break
 
