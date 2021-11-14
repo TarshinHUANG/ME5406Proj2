@@ -12,11 +12,11 @@ import tensorflow as tf
 import tqdm
 from tensorflow.keras import layers
 from typing import List, Tuple
-from subtaskenv import Ball_env  # Import environment
+from subtask2env import Ball_env  # Import environment
 
 # Hyper-parameters to be adjusted here ##############################################################
-max_episodes = 10000  # End training after this number of episode
-max_steps_per_episode = 1000  # End episode after this number of timesteps
+max_episodes = 2000  # End training after this number of episode
+max_steps_per_episode = 2000  # End episode after this number of timesteps
 num_hl_1 = 40  # Number of first hidden layer
 num_hl_2 = 20  # Number of second hidden layer
 REACH_COUNT_THRESHOLD = 100  # Accomplish the training when reach count reaches the threshold
@@ -24,14 +24,12 @@ gamma = 0.99  # Discount factor for future rewards
 #####################################################################################################
 
 # Parameters for saving weights #####################################################################
-LOAD_WEIGHT = False  # load trained weight or not
-LOAD_WEIGHT_DIR = 'trial'
+LOAD_WEIGHT = True  # load trained weight or not
+LOAD_WEIGHT_DIR = 'subtask2_(+1000,+100,-0.1,-1,-3)_trained1'
 SAVE_WEIGHT = True  # save trained weight or not
-SAVE_WEIGHT_DIR = 'subtask2_(-0.1,-1,-3)'
+SAVE_WEIGHT_DIR = 'subtask2_(+1000,+100,-0.1,-1,-3)_trained2'
 #####################################################################################################
 
-episode_num = 0
-reach_count = 0
 
 
 class AdvantageActorCritic(tf.keras.Model):
@@ -56,8 +54,8 @@ def env_step(action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns state, reward and done flag given an action."""
     # Env is the environment package.
     state, reward, done = env.step(action)
-    # if episode_num % 100 == 0:
-    #    env.render()
+    #if episode_num % 100 == 0:
+    env.render()
     state = np.array(state)
     return state.astype(np.float32), np.array(reward, np.float32), np.array(done, np.int32)
 
@@ -110,8 +108,8 @@ def run_episode(initial_state: tf.Tensor, model: tf.keras.Model, max_steps: int)
 
         done = tf.cast(done, tf.bool)
         if done:
-            print('Reached the target!!!')
             reach_count += 1
+            print('Reached the target!!!!, Reach count: ', reach_count)
             break
     action_probs = action_probs.stack()
     values = values.stack()
@@ -150,7 +148,7 @@ def compute_loss(action_probs: tf.Tensor,  values: tf.Tensor,  returns: tf.Tenso
     advantage = returns - values
 
     action_log_probs = tf.math.log(action_probs)
-    actor_loss = -tf.math.reduce_sum(action_log_probs * advantage)
+    actor_loss = -0.1*tf.math.reduce_sum(action_log_probs * advantage)
     critic_loss = huber_loss(values, returns)
     print('Actor Loss:', actor_loss.numpy(), 'Critic Loss:', critic_loss.numpy())
     total_loss = actor_loss + critic_loss
@@ -186,47 +184,51 @@ def episode_train(initial_state: tf.Tensor, model: tf.keras.Model, optimizer: tf
 
 
 # 5. Run the training loop
-env = Ball_env()  # Setup simulation environment
+for i in range(10):
+    print('Number', i, 'Training')
+    reach_count = 0
+    episode_num = 0
+    env = Ball_env()  # Setup simulation environment
 
-# Create A2C model
-A2Cmodel = AdvantageActorCritic(num_actions=9, num_hidden_1_unit=num_hl_1, num_hidden_2_unit=num_hl_2)
-if LOAD_WEIGHT:
-    A2Cmodel.load_weights(filepath=LOAD_WEIGHT_DIR)
-    print('Loaded weight: ', LOAD_WEIGHT_DIR)
+    # Create A2C model
+    A2Cmodel = AdvantageActorCritic(num_actions=9, num_hidden_1_unit=num_hl_1, num_hidden_2_unit=num_hl_2)
+    if LOAD_WEIGHT:
+        A2Cmodel.load_weights(filepath=LOAD_WEIGHT_DIR)
+        print('Loaded weight: ', LOAD_WEIGHT_DIR)
 
-eps = np.finfo(np.float32).eps.item()  # Smallest number recognizable by the float.
-huber_loss = tf.keras.losses.Huber(reduction=tf.keras.losses.Reduction.SUM)  # Calculate huber loss
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)  # Setup optimizer
+    eps = np.finfo(np.float32).eps.item()  # Smallest number recognizable by the float.
+    huber_loss = tf.keras.losses.Huber(reduction=tf.keras.losses.Reduction.SUM)  # Calculate huber loss
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)  # Setup optimizer
+    accomplished = False
 
-running_reward = 0  # Real-time averaged reward
-# Deque to keep last 100 episodes reward
-episodes_reward: collections.deque = collections.deque(maxlen=100)
+    running_reward = 0  # Real-time averaged reward
+    # Deque to keep last 100 episodes reward
+    episodes_reward: collections.deque = collections.deque(maxlen=100)
 
-# Total episode loop of training
-with tqdm.trange(max_episodes) as t:
-    for i in t:
-        episode_num = i
-        initial_state = tf.constant(env.reset(), dtype=tf.float32)
-        episode_reward = episode_train(initial_state, A2Cmodel, optimizer, gamma, max_steps_per_episode)
+    # Total episode loop of training
+    with tqdm.trange(max_episodes) as t:
+        for i in t:
+            episode_num = episode_num+1
+            initial_state = tf.constant(env.reset(), dtype=tf.float32)
+            episode_reward = episode_train(initial_state, A2Cmodel, optimizer, gamma, max_steps_per_episode)
 
-        episodes_reward.append(episode_reward.numpy())
-        running_reward = statistics.mean(episodes_reward)
+            episodes_reward.append(episode_reward.numpy())
+            running_reward = statistics.mean(episodes_reward)
 
-        t.set_description(f'Episode {i}')
-        t.set_postfix(episode_reward=episode_reward.numpy())
+            t.set_description(f'Episode {i}')
+            t.set_postfix(episode_reward=episode_reward.numpy())
+            # Show average episode reward every 50 episodes
+            if i % 100 == 0:
+                print(' ')
+                print(f'Episode {i}: average reward: {running_reward}')
+            if reach_count > REACH_COUNT_THRESHOLD:
+                break
 
-        # Show average episode reward every 50 episodes
-        if i % 100 == 0:
-            print('\n')
-            print(f'Episode {i}: average reward: {running_reward}')
-        if reach_count > REACH_COUNT_THRESHOLD:
-            break
+    print(f'\nSolved at episode {i}: average reward: {running_reward:.2f}!')
+    print('Reached count: ', reach_count)
 
-print(f'\nSolved at episode {i}: average reward: {running_reward:.2f}!')
-print('Reached count: ', reach_count)
+    # A2Cmodel.summary()
 
-# A2Cmodel.summary()
-
-if SAVE_WEIGHT:
-    A2Cmodel.save_weights(filepath=SAVE_WEIGHT_DIR, overwrite=True, save_format=None, options=None)
-    print('Weight saved as: ', SAVE_WEIGHT_DIR)
+    if SAVE_WEIGHT:
+        A2Cmodel.save_weights(filepath=SAVE_WEIGHT_DIR, overwrite=True, save_format=None, options=None)
+        print('Weight saved as: ', SAVE_WEIGHT_DIR)
