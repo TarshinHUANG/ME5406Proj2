@@ -45,7 +45,7 @@ BALL_SIZE = 50  # the radius of football (supposing circle)
 CE_FRI = 0.01  # coefficient of friction
 MASS_RAT = 1  # the ratio of robot to football
 SLD_THD = 0  # the random sliding's threshold when robot knicking the ball
-VEL_THRD = 100  # the max velocity is considered as entering the gate
+# VEL_THRD = 500  # the max velocity is considered as entering the gate
 SPEED_THRD = 500  # the max speed of the robot and the football
 ANG_SPEED_THRD = 20  # the max angular speed of the robot
 
@@ -53,7 +53,7 @@ ANG_SPEED_THRD = 20  # the max angular speed of the robot
 REACH_GATE = 1000  # when the ball reaches the gate
 REACH_BALL = 100   # when the robot hits the ball
 HIT_WALL = 0  # the robot hits the wall
-DIS_RB_N = 1  # the nearer distance reward between the robot and the ball
+DIS_RB_N = -0.1  # the nearer distance reward between the robot and the ball
 DIS_RB_F = -1  # the farther distance reward between the robot and the ball
 STEP = -3  # each step
 '''
@@ -400,16 +400,16 @@ class Ball_env(gym.Env):
         if self.old_distanceRB == -1:
             # first value of old_distance
             self.old_distanceRB = new_distanceRB
-        if (self.distance(self.ball_pos, self.gate_pos) <= BALL_SIZE and self.ball_vel[0] <= VEL_THRD and
-                self.ball_vel[1] <= VEL_THRD):
+        if self.distance(self.ball_pos, self.gate_pos) <= BALL_SIZE:
             # the football reach the gate
             reward = REACH_GATE
         elif self.col_type == 1:
             # hits the ball
             reward = REACH_BALL
-        elif self.col_type == 2:
+            print('kicked.')
+        # elif self.col_type == 2:
             # the robot hits the wall
-            reward = HIT_WALL
+        #    reward = HIT_WALL
         elif (new_distanceRB < self.old_distanceRB):
             # get closer to the ball
             reward = DIS_RB_N
@@ -451,13 +451,10 @@ class Ball_env(gym.Env):
     # detect episode end
     def is_end(self):
         is_end = False
-        # situation1: the robot hits the football
-        if (self.distance(self.ball_pos, self.gate_pos) <= BALL_SIZE and self.ball_vel[0] <= VEL_THRD and
-                self.ball_vel[1] <= VEL_THRD):
+        # situation1: the football reaches the gate
+        if self.distance(self.ball_pos, self.gate_pos) <= BALL_SIZE:
             is_end = True
-        # # situation2: too much steps
-        # if (self.steps > MAX_STEPS):
-        #     is_end = True
+
         return is_end
 
     # get distance between two points
