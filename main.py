@@ -148,7 +148,7 @@ def compute_loss(action_probs: tf.Tensor,  values: tf.Tensor,  returns: tf.Tenso
     advantage = returns - values
 
     action_log_probs = tf.math.log(action_probs)
-    actor_loss = -0.1*tf.math.reduce_sum(action_log_probs * advantage)
+    actor_loss = -tf.math.reduce_sum(action_log_probs * advantage)
     critic_loss = huber_loss(values, returns)
     print('Actor Loss:', actor_loss.numpy(), 'Critic Loss:', critic_loss.numpy())
     total_loss = actor_loss + critic_loss
