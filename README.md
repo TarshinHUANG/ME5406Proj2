@@ -1,8 +1,8 @@
 # Football Court
 
-This project utilized Pytorch and Tensorflow so that the learning agent learns firstly approaching to the football and then kicking the football to the target position. Deep RL methods including DQN, DDPG, A2C, and PPO are attempted in this project, and different methods has different environment requirements. The introduction of included files and methods to setup the environments with respect to different learning method are introduced as below:
+This project utilized Pytorch and Tensorflow so that the learning agent learns firstly approaching to the football and then kicking the football to the target position. Deep RL methods including DQN, A2C, and PPO are attempted in this project, and different methods has different environment requirements. The introduction of included files and methods to setup the environments with respect to different learning method are introduced as below:
 
-## The A2C Algorithm
+## 1 The A2C Algorithm
 
 ### Setup procedure
 
@@ -12,21 +12,28 @@ This project utilized Pytorch and Tensorflow so that the learning agent learns f
 
 ### The file structure
 
-> ./A2C/
-> 	A2Cmaintask_test.py							: run to test the main task.
-> 	A2Cmaintask_train.py						   : run to train the main task.
-> 	A2Cmaintaskenv.py							  : environment for the main task.
-> 	A2Csubtask_test.py							   : run to test the subtask.
-> 	A2Csubtask_train.py							 : run to train the subtask.
-> 	A2Csubtaskenv.py								  : environment for the subtask.
->
-> ​	'gate.png', 'robot.png', 'soccer.png'	: Three figures for the UI.
->
-> ​	'checkpoint'											: format file for Tensorflow model.
-> ​	'maintask_trained.data-00000-of-00001', 'maintask_trained.index': Saved model for 	the main task.
-> ​	'subtask_trained.data-00000-of-00001', 'subtask_trained.index': Saved model for the subtask.
+​	./A2C/
+​		A2Cmaintask_test.py								: run to test the main task.
+​		A2Cmaintask_train.py						  	 : run to train the main task.
+​		A2Cmaintaskenv.py							 	 : environment for the main task.
+​		A2Csubtask_test.py							  	 : run to test the subtask.
+​		A2Csubtask_train.py								 : run to train the subtask.
+​		A2Csubtaskenv.py									  : environment for the subtask.
 
-## The PPO Algorithm
+​		'gate.png', 'robot.png', 'soccer.png'		: Three figures for the UI.
+
+​		'checkpoint'												: format file for Tensorflow model.
+​		'maintask_trained.data-00000-of-00001',
+​		'maintask_trained.index'							: Saved model for 	the main task.
+
+​		'subtask_trained.data-00000-of-00001', 
+​		'subtask_trained.index'							  : Saved model for the subtask.
+
+
+
+> 
+
+## 2 The PPO Algorithm
 
 ### Environment build
 
@@ -54,16 +61,34 @@ If want to retrain the model, then open these two main.py files, change the bool
 
 ### The file structure
 
-> ./PPO/                                                   
-> 	env_PPO_Maintask.py                    	   : The env for the Maintask
-> 	env_PPO_Subtask.py              			    : The env for the Subtask
-> 	main_PPO_Maintask.py					     : The main for the Maintask
-> 	main_PPO_Subtask.py						   : The main for the Subtask
-> 	requirements.txt								    : The requirements for the python enviroments
-> 	gate.png												   : The picture for the env render
-> 	robot.png												 : The picture for the env render
-> 	soccer.png												: The picture for the env render
-> 	logs/
-> 		Maintask.zip										 : The trained model for the Maintask
-> 		Subtask.zip										   : The trained model for the Subtask
+./PPO/                                                   
+	env_PPO_Maintask.py                    	   : The env for the Maintask
+	env_PPO_Subtask.py              			    : The env for the Subtask
+	main_PPO_Maintask.py					     : The main for the Maintask
+	main_PPO_Subtask.py						   : The main for the Subtask
+	requirements.txt								    : The requirements for the python enviroments
+	gate.png												   : The picture for the env render
+	robot.png												 : The picture for the env render
+	soccer.png												: The picture for the env render
+	logs/
+		Maintask.zip										 : The trained model for the Maintask
+		Subtask.zip										   : The trained model for the Subtask
 
+## 3 The DQN Algorithm
+
+### Setup procedure
+
+1. Put all the source codes, model files, and picture files in a project folder with Python3 interpreter.
+2. Make up the environment based on 'requirement.txt'.
+3. Directly run any python file for training or testing. The purposes of the files are already indicated in their names. The adjustable parameters and booleans are listed in the beginning of the code.
+
+### The file structure
+
+./DQN/
+	createui.py										: the UI controlling by keybroads
+	DQN_maintask_training_test.py	: run to train and test the main task.
+	DQN_maintask_RL_main.py			: rnetwork the main task.
+	DQN_maintask_env.py					: environment for the main task.
+	DQN_subtask_training_test.py		: run to train and test the subtask.
+	DQN_subtask_RL_main.py				: The network the subtask.
+	DQN_subtask_env.py						: environment for the subtask.

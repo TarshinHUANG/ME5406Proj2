@@ -1,0 +1,19 @@
+Readme
+This project is built for #ME5406 Deep Learning for Robotics @NUS
+
+This project utilized Pytorch and Tensorflow so that the learning agent learns firstly approaching to the football and then kicking the football to the target position. Deep RL methods including DQN, DDPG, A2C, and PPO are attempted in this project, and different methods has different environment requirements. The introduction of included files and methods to setup the environments with respect to different learning method are introduced as below:
+
+The requirement is as following:
+
+gym	0.21.0	
+
+keras	2.7.0	
+
+numpy	1.19.5	
+
+pyglet	1.5.21	
+
+sympy	1.9
+tensorflow     2.7.0
+tqdm	4.62.3	
+matplotlib	3.5.0
