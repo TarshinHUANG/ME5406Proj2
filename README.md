@@ -23,7 +23,9 @@ This project utilized Pytorch and Tensorflow so that the learning agent learns f
 > ​	'gate.png', 'robot.png', 'soccer.png'	: Three figures for the UI.
 >
 > ​	'checkpoint'											: format file for Tensorflow model.
+> 
 > ​	'maintask_trained.data-00000-of-00001', 'maintask_trained.index': Saved model for 	the main task.
+> 
 > ​	'subtask_trained.data-00000-of-00001', 'subtask_trained.index': Saved model for the subtask.
 
 ## The PPO Algorithm
