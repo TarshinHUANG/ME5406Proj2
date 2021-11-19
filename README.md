@@ -38,10 +38,6 @@ This project utilized Pytorch and Tensorflow so that the learning agent learns f
 
 ​		'subtask_trained.index'							  : Saved model for the subtask.
 
-
-
-> 
-
 ## 2 The PPO Algorithm
 
 ### Environment build

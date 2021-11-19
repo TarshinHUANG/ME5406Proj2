@@ -39,9 +39,9 @@ ANG_SPEED_THRD = 20  # the max angular speed of the robot
 # Reward adjustment
 REACH_GATE = 1000  # when the ball reaches the gate
 REACH_BALL = 100  # when the robot hits the ball
-HIT_WALL = -0  # the robot hits the wall
-DIS_RB_N = -1  # the nearer distance reward between the robot and the ball
-DIS_RB_F = 1  # the farther distance reward between the robot and the ball
+HIT_WALL = 0  # the robot hits the wall
+DIS_RB_N = 1  # the nearer distance reward between the robot and the ball
+DIS_RB_F = -1  # the farther distance reward between the robot and the ball
 STEP = -3  # each step
 '''
     Oberservation:
@@ -476,6 +476,7 @@ class Viewer(pyglet.window.Window):
 
         # load football
         # load the picture, cannot use pyglet.image.load()
+
         self.ball = pyglet.resource.image('soccer.png')
         self.ball.width = 2 * BALL_SIZE
         self.ball.height = 2 * BALL_SIZE
