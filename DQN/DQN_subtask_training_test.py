@@ -111,41 +111,40 @@ if __name__ == "__main__":
         all_cost_bar = [positive_count, negative_count]
         print(all_cost_bar)
         # Record the data to the list
-        all_cost_bar = [positive_count, negative_count]
-        print(all_cost_bar)
-        plt.figure()
-        plt.plot(np.arange(len(steps)), steps, 'b')
-        plt.title('Episode via steps')
-        plt.xlabel('Episode')
-        plt.ylabel('Steps')
-        plt.show()
 
-        plt.figure()
-        plt.plot(np.arange(len(all_costs)), all_costs, 'b')
-        plt.title('Episode via cost')
-        plt.xlabel('Episode')
-        plt.ylabel('Cost')
-        plt.show()
+    plt.figure()
+    plt.plot(np.arange(len(steps)), steps, 'b')
+    plt.title('Episode via steps')
+    plt.xlabel('Episode')
+    plt.ylabel('Steps')
+    plt.show()
 
-        plt.figure()
-        plt.plot(np.arange(len(accuracy)), accuracy, 'b')
-        plt.title('Episode via Accuracy')
-        plt.xlabel('Episode')
-        plt.ylabel('Accuracy')
-        plt.show()
+    plt.figure()
+    plt.plot(np.arange(len(all_costs)), all_costs, 'b')
+    plt.title('Episode via cost')
+    plt.xlabel('Episode')
+    plt.ylabel('Cost')
+    plt.show()
 
-        plt.figure()
-        list = ['Success', 'Fail']
-        color_list = ['blue', 'red']
-        plt.bar(np.arange(len(all_cost_bar)), all_cost_bar, tick_label=list, color=color_list)
-        plt.title('Bar/Success and Fail')
-        plt.ylabel('Number')
+    plt.figure()
+    plt.plot(np.arange(len(accuracy)), accuracy, 'b')
+    plt.title('Episode via Accuracy')
+    plt.xlabel('Episode')
+    plt.ylabel('Accuracy')
+    plt.show()
 
-        plt.figure()
-        plt.plot(np.arange(len(Reward_list)), Reward_list, 'b')
-        plt.title('Episode via Average rewards')
-        plt.xlabel('Episode')
-        plt.ylabel('Average rewards')
-        plt.show()
+    plt.figure()
+    list = ['Success', 'Fail']
+    color_list = ['blue', 'red']
+    plt.bar(np.arange(len(all_cost_bar)), all_cost_bar, tick_label=list, color=color_list)
+    plt.title('Bar/Success and Fail')
+    plt.ylabel('Number')
+
+    plt.figure()
+    plt.plot(np.arange(len(Reward_list)), Reward_list, 'b')
+    plt.title('Episode via Average rewards')
+    plt.xlabel('Episode')
+    plt.ylabel('Average rewards')
+    plt.show()
 
 RL.test()
